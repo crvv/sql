@@ -20,7 +20,10 @@ WITH RECURSIVE
 >>.++.+++++++..<-.>>-
 Clean up used cells.
 [[-]<]'),
-    instructions(i, char) AS (SELECT (row_number() OVER())::INT AS i, char FROM program CROSS JOIN regexp_split_to_table(program.p, '') AS t(char)),
+    instructions(i, char) AS (
+        SELECT i::INTEGER, char
+        FROM program
+        CROSS JOIN regexp_split_to_table(program.p, '') WITH ORDINALITY AS t(char, i)),
     walk_list(i, char, pair, stack) AS (
         SELECT 0, '', 0, '{}'::INT[]
         UNION
@@ -31,7 +34,7 @@ Clean up used cells.
             WHEN '[' THEN stack || list.i
                 WHEN ']' THEN stack[:array_length(stack, 1)-1]
             ELSE stack END
-        FROM walk_list AS walk INNER JOIN instructions AS list ON list.i = walk.i +1
+        FROM walk_list AS walk INNER JOIN instructions AS list ON list.i = walk.i + 1
     ),
     jump_table(src, dst) AS (
         SELECT i, pair FROM walk_list WHERE char = ']'
