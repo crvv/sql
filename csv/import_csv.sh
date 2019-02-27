@@ -5,6 +5,14 @@ if [ "$1" = '' ]; then
     exit 1
 fi
 
-CSVFILE=$(realpath "$1")
+FILE=$(realpath $1)
+TABLE=$(sed 's/\.csv//' <<<$(basename $FILE))
 
-psql -v "csvfile=$CSVFILE" -f import.sql
+cd $(dirname $0)
+
+psql \
+    -v "table=$TABLE" \
+    -c 'CREATE TEMP TABLE csv_header (header TEXT) WITH OIDS' \
+    -c "\\copy csv_header FROM PROGRAM 'head -n 1 $FILE'" \
+    -f table.sql \
+    -c "\\copy $TABLE FROM $FILE WITH (FORMAT csv, HEADER TRUE)"
